@@ -13,7 +13,7 @@ const TTSComponent01 = ({ text }) => {
         setIsPlaying(true);
 
         const url = `http://143.198.171.109:5000/tts`;
-        const audio_id = Math.random()
+        const audio_id = Math.random().toString()
 
         try {
             const response = await fetch(url, {
@@ -58,19 +58,32 @@ const TTSComponent01 = ({ text }) => {
 
             const reader = response.body.getReader();
 
-            const audioChunks = []
+            let audioChunks = []
             const audioEl = new Audio("")
             let timeout
             console.dir(audioEl)
+            let isFullyLoaded = false
+            audioEl.addEventListener("loadeddata", () => {
+              console.log(`
+                dur - ${audioEl.duration}
+                cur - ${audioEl.currentTime}
+                `)
+              if(isFullyLoaded || audioEl.duration - audioEl.currentTime > 1) {
+                audioEl.play()
+                console.log("TYUHJK <JELJK LK LK")
+                console.log("playing")
+              }
+            })
             for await(const audioChunk of getStream(reader)) {
                 console.log("playing next")
-                audioChunks.push(audioChunk)
-                console.log(audioChunk)
+                audioChunks = [...audioChunks, audioChunk]
+                // console.log(audioChunk)
                 // await playAudioChunk$(audioChunk).catch(err => console.error(err))
                 const blob = new Blob(audioChunks, { type: response.headers.get("content-type") })
+              console.log(blob)
                 const audioUrl = URL.createObjectURL(blob)
                 clearTimeout(timeout)
-                playAudio(audioEl, audioUrl)
+                loadAudio(audioEl, audioUrl)
 
                 // await new Promise((res, rej) => {
                 //     audioEl.play()
@@ -87,17 +100,18 @@ const TTSComponent01 = ({ text }) => {
             console.log("done")
             console.dir(audioEl)
 
-            {
-                console.log("making download")
-                const url = `http://143.198.171.109:5000/download/${audio_id}`;
-                const response = await fetch(url);
-                response.blob().then(audio => {
-                    console.log("done download")
-                    console.log(audio)
-                    const audioUrl = URL.createObjectURL(audio)
-                    playAudio(audioEl, audioUrl)
-                })
-            }
+            // {
+            //     console.log("making download")
+            //     const url = `http://143.198.171.109:5000/download/${audio_id}`;
+            //     const response = await fetch(url);
+            //     response.blob().then(audio => {
+            //         console.log("done download")
+            //         console.log(audio)
+            //         const audioUrl = URL.createObjectURL(audio)
+            //         loadAudio(audioEl, audioUrl)
+            //         isFullyLoaded = true
+            //     })
+            // }
 
             // for(const chunk of audioChunks) {
             //     await p
@@ -133,16 +147,14 @@ const TTSComponent01 = ({ text }) => {
     //     console.log("TYUHJK <JELJK LK LK")
     //     console.log("playing")
     // }, 100)
-    const playAudio = throttle((el, src) => {
+    const loadAudio = throttle((el, src) => {
         const currentTime = el.currentTime
-        console.log((currentTime))
+        // console.log((currentTime))
         el.pause()
         el.src = src
+        // el.currentTime = currentTime
         el.currentTime = currentTime
-        el.play()
-        console.log("TYUHJK <JELJK LK LK")
-        console.log("playing")
-    }, 1000)
+    }, 250)
     // const playAudio = throttle((el, src) => {
     //     deb(() => {
     //         const currentTime = el.currentTime
